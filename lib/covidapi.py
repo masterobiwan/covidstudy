@@ -39,23 +39,23 @@ class Client:
                 region=region,
             )).text)
 
-    def get_indicator(self, indicator, type, country, region=None, daterange=None, formatter=None):
-        assert daterange
+    def get_indicator(self, indicator, type, country, region=None, date=None, formatter=None):
+        assert date
         if region is None:
-            results = json.loads(requests.get("{url}/api/resources?indicator={indicator}&type={type}&country={country}&daterange={daterange}".format(
+            results = json.loads(requests.get("{url}/api/resources?indicator={indicator}&type={type}&country={country}&date={date}".format(
                 url=self.url,
                 indicator=indicator,
                 type=type,
                 country=country,
-                daterange=daterange,
+                date=date,
             )).text)
         else:
-            results = json.loads(requests.get("{url}/api/resources?indicator={indicator}&type={type}&country={country}&region={region}&daterange={daterange}".format(
+            results = json.loads(requests.get("{url}/api/resources?indicator={indicator}&type={type}&country={country}&region={region}&date={date}".format(
                 url=self.url,
                 indicator=indicator,
                 type=type,
                 country=country,
-                daterange=daterange,
+                date=date,
                 region=region,
             )).text)
         if formatter is None:
