@@ -9,6 +9,7 @@ license = "GPL-3.0"
 python = "^3.8"
 requests = "^2.25.1"
 boto3 = "1.17.21"
+pandas = "1.2.3"
 
 [tool.poetry.dev-dependencies]
 
