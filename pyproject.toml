@@ -8,9 +8,10 @@ license = "GPL-3.0"
 [tool.poetry.dependencies]
 python = "^3.8"
 requests = "^2.25.1"
-boto3 = "1.17.21"
 pandas = "1.2.3"
 pyarrow = "3.0.0"
+s3fs = "^0.4.2"
+boto3 = "^1.17.0"
 
 [tool.poetry.dev-dependencies]
 
