@@ -4,7 +4,8 @@ import json
 
 apiclient = Client()
 
-selected_countries = None
+#selected_countries = None
+selected_countries = [{"country": "France"}]
 if selected_countries is None:
     countries_data = apiclient.get_countries()["data"]
 else:
