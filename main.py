@@ -1,18 +1,14 @@
-from lib.covidapi import formatJson, printJson, Client
-from pandas import read_json
+from lib.covidapi import Client
+from pandas import read_json, to_datetime
 import json
-import boto3
 
 apiclient = Client()
 
-selected_countries = "France"
+selected_countries = None
 if selected_countries is None:
     countries_data = apiclient.get_countries()["data"]
 else:
-    countries_data = [
-        {"country": "France"},
-        {"country": "Germany"},
-    ]
+    countries_data = selected_countries
 
 indicators = [
     {"name": "covid", "field": "cli"},
@@ -59,13 +55,8 @@ indicators = [
     {"name": "appointment_tried"},
 ]
 
-selected_dates = [
-    {"survey_date": 20200510},
-    {"survey_date": 20210310},
-]
+selected_dates = None
 
-session = boto3.Session(profile_name="perso")
-s3 = session.client('s3')
 countries_json = {}
 for country in countries_data:
     if selected_dates is None:
@@ -76,10 +67,26 @@ for country in countries_data:
         for indicator_dict in indicators:
             indicator = indicator_dict["name"]
             indicator_data = apiclient.get_indicator(indicator=indicator, type="daily", country=country["country"], date=country_date["survey_date"])["data"]
-            #df[indicator] = read_json(json.dumps(indicator_data))
             if indicator not in countries_json:
                 countries_json[indicator] = []
             countries_json[indicator].extend(indicator_data)
-            #s3.put_object(Body=indicator_data, Bucket="castelnajac-open-data", Key="covidstudy/country={country}/date={date}/indicators.json".format(country=country["country"], date=country_date["survey_date"]))
     
-printJson(countries_json)
+primary_keys = ["survey_date", "country"]
+df_countries = read_json(json.dumps(countries_data))
+df_dates = read_json(json.dumps(selected_dates))
+df = df_countries.merge(df_dates, how="cross")
+for indicator in countries_json:
+    indicator_data = countries_json[indicator]
+    df2 = read_json(json.dumps(indicator_data)).drop(columns=["sample_size", "iso_code", "gid_0"])
+    df = df.merge(df2, how="left", on=primary_keys)
+
+df["date"] = to_datetime(df["survey_date"], format="%Y%m%d").dt.date
+df = df.drop("survey_date", axis="columns")
+rename_dict = {}
+for indicator in indicators:
+    rename_dict["percent_{old}".format(old=indicator["field"])] = "percent_{new}".format(new=indicator["name"])
+    rename_dict["percent_{old}_unw".format(old=indicator["field"])] = "percent_{new}_unw".format(new=indicator["name"])
+    rename_dict["{old}_se".format(old=indicator["field"])] = "{new}_se".format(new=indicator["name"])
+    rename_dict["{old}_se_unw".format(old=indicator["field"])] = "{new}_se_unw".format(new=indicator["name"])
+df = df.rename(rename_dict, axis="columns")
+df.to_parquet("s3://castelnajac-open-data/covidstudy/", partition_cols=["date"])
